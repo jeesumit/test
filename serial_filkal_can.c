@@ -19,7 +19,7 @@ char filname[] = "./path_deployment_v2.0/data/path_points.txt";
 /*----------------------KALMAN GAIN PARAMETERS --------------------------*/
 double cur_lat =0.0,cur_lng=0.0,prev_lat=0.0,prev_lng=0.0;
 double pred_lat,pred_lng,sum_lat,sum_lng,out_lat=0.0,out_lng=0.0;
-int n =0,canbus=0;
+int n =0,canbus=0,cancte=0,mainc =0;
 float gain=0.5;
 
 /*-----------------------------------------------------------------------*/
@@ -110,6 +110,7 @@ while(!feof(fp))
     
   }
 }
+
  fclose(fp);    
 }
 printf("%d,",count);
@@ -126,6 +127,7 @@ while (!feof(nf) && line_count < count) {
     
     fd = open(filename, O_RDONLY);
     if (fd == -1) {
+
         perror("Error opening file");
         exit(EXIT_FAILURE);
     }
@@ -192,54 +194,34 @@ while (!feof(nf) && line_count < count) {
 	   ang_ac= initial_bearing(lat_pa,out_lat, lon_pa, out_lng);
 	   diffang_h=head-ang_ab;
 	   cte_ab = cross_track_error(dis_ac,ang_ab, ang_ac);
-           /*
-           if((cte_ab <1.5 && cte_ab >0.0) || (cte_ab > -1.5 && cte_ab < 0.0)){
-              prev_cte = -1.0*3.6154*cte_ab;
-              }
-           else{
-           prev_cte = -1*0.8154*cte_ab;
-           }
-           if(prev_cte == 0.0){
-            prdstpt = 0.0;
-           }
-           else{
-                double valf = (prev_cte/dis_ac);
-                if(valf >= 1.0){
-                 prdstpt =90.0;
-                 printf("ATE:%.2f , %.2f\n",along_track_error(dis_ac,prev_cte), dis_ac);
-                 }
-                else if(valf <= -1.0){
-                 prdstpt = -90.0;
-                 printf("ATE %.2f, %.2f \n",along_track_error(dis_ac,prev_cte),dis_ac);
-                 }
-                else{
-                printf("%.2f, %.2f %.2f\n",prev_cte,dis_ac,(prev_cte/dis_ac));
-                prdstpt =ConvertRadtoDeg(asin(prev_cte / dis_ac));
-            }
-           }*/
+           
            if(cte_ab !=0.0){
-           prev_cte = -1*0.7154*cte_ab;
+           prev_cte = -1.0*0.3554*cte_ab;
+           //prev_cte = (0.1*(cte_ab*cte_ab)-6.4);
            prdstpt =ConvertRadtoDeg(asin(prev_cte / dis_ac));
            }
-           estset = 2*prdstpt;
+           //estset = 3*prdstpt;
+             estset = 2*prdstpt;
+
            ///sprintf(logdata,"CTE:%.2f, estCTE:%.2f, disAC:%.2f deltaAng:%.2f \n",cte_ab,prev_cte,dis_ac,diffang_h);
-           //canbus = pidHead(diffang_h,(-5*cte_ab),100.0,0.0,0.0);
-           canbus = pidHead(diffang_h,estset,100.0,0.0,10.0);
+           cancte = pidCTE(cte_ab,prev_cte,200.0,0.01,10.0);
+           canbus = pidHead(diffang_h,estset,150.0,0.000001,40.0);
+           mainc =(int)((canbus + cancte) / 2);
 	   //printf("CTE:%.2f predst: %.2f setpt:%.2f %d\n",cte_ab,3*prdstpt,(-5*cte_ab),line_count); 
-	   sprintf(message,"%d\r\n",canbus);
+	   sprintf(message,"%d\r\n",mainc);
 	   bytes_written = write(fds,message, sizeof(message));
      	   if (bytes_written == -1) {
         	perror("Error writing to serial port");
         	close(fds);
     		}
-           sprintf(logdata,"CTE:%.2f, estCTE:%.2f, disAC:%.2f deltaAng:%.2f num:%d canbus:%d estpt:%.2f\n",cte_ab,prev_cte,dis_ac,diffang_h,line_count,canbus,estset);
+           sprintf(logdata,"CTE:%.2f, estCTE:%.2f,estcan:%d canBuscte:%d num:%d canbus:%d\n",cte_ab,prev_cte,mainc,cancte,line_count,canbus);
            printf("%s ",logdata); 
            ssize_t logbyte = write(lgfds,logdata,strlen(logdata));
              if(logbyte == -1){
                  perror("ERROR -- log");
                   close(lgfds);
                }
-	   if(diff <5.0 && diff > 0.0){
+	   if(diff <3.4 && diff > 0.0){
 		fgets(line, 255, nf);
 		line_count++;
 		gettimeofday(&str, NULL);	

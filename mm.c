@@ -167,3 +167,31 @@ int Constrain(int au32_IN, int au32_MIN, int au32_MAX) {
 		return au32_IN;
 	}
 }
+
+
+int pidCTE(double val,double setp,double kp,double ki,double kd){
+
+    int steer,start_ht ,final_ht=0;
+    struct timeval tim; 
+    gettimeofday(&tim, NULL);
+    start_ht = tim.tv_usec;
+    float preverrorh, error_h=0.0;
+    double elapsed_time, head_h=0;
+    long int PID_val=0;
+    double setpoint_h, integral_h=0.0, derivative_h=0.0;
+    setpoint_h=setp;
+    
+    error_h=(float)(setpoint_h-val);
+    elapsed_time=(double)(start_ht-final_ht);
+    //printf("%f \n",elapsed_time);
+    integral_h+=((double)(error_h*elapsed_time));
+    derivative_h = ((double)(error_h-preverrorh))/elapsed_time;
+    PID_val=(int)(kp*error_h+ki*integral_h+kd*derivative_h);
+    preverrorh=error_h;
+    final_ht = tim.tv_usec;
+    long int dutycycleh=Constrain(PID_val, -4096, 4096);
+    int vah = MAP(dutycycleh, -4096,4096, 0,255);
+    steer = (int)((1.76*0.0001*vah*vah)-(0.335*vah)+91);
+    //printf("steer:%d \n",steer);
+    return steer;
+}

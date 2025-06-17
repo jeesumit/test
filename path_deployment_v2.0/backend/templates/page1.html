@@ -60,7 +60,7 @@
         const ACCESS_TOKEN = "pk.eyJ1Ijoic3VtaXRjaGF0dGVyamVlIiwiYSI6ImNrd2prODhoazB6enIycHBrZmRrY2FtMGkifQ.WS22x5YJykpK9aFATKT8EA";
         
         // Initialize the map
-        const map = L.map("map").setView([28.436, 77.304], 19);
+        const map = L.map("map").setView([28.436, 77.304], 21);
         L.tileLayer(`https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.png?access_token=${ACCESS_TOKEN}`, {
             maxZoom: 24,
             tileSize: 512,
@@ -69,10 +69,10 @@
 
         let eventSource = null;
         let latestMarker = null;
-        let livePath = L.polyline([], { color: 'blue',weight:5 }).addTo(map);
+        let livePath = L.polyline([], { color: '#02ccfe',weight:10}).addTo(map);
  
 
-        
+        let marker_pt;
         const MAX_POINTS = 100;
         let lastPanTime = 0;
         const PAN_INTERVAL = 2000; // ms
@@ -146,7 +146,7 @@
        			 console.error('Error:', error);
       		});
         	}
-
+         let first = true;
         // Limit points in polyline
         function updateLiveLocation(latitude, longitude, line_color) {
             if (!latitude || !longitude) return;
@@ -166,14 +166,22 @@
             if (latestMarker) {
                 map.removeLayer(latestMarker);
             }
-            latestMarker = L.marker(latLng).addTo(map);
 
+if(marker_pt){
+map.removeLayer(marker_pt);
+}
+           // latestMarker = L.marker(latLng).addTo(map);
+            latestMarker = L.circleMarker(latLng,{radius:12, color : '#02ccfe'}).addTo(map);
             // Throttle map panning
-            const now = Date.now();
+           /* const now = Date.now();
             if (now - lastPanTime > PAN_INTERVAL) {
-                map.setView(latLng, 19);
+                map.setView(latLng, 21);
                 lastPanTime = now;
-            }
+            }*/
+            if (first){
+               map.setView(latLng,22);
+               first=false;
+}
         }
 
         
@@ -224,9 +232,10 @@
           })
           .then((post) => {
             console.log(post);
-            var polyline_ = L.polyline(post.track, { color: "yellow"}).addTo(map);
-              // L.polyline(post.track.slice(0,3), {color :"green"}).addTo(map);
-            L.marker(post.track[0]).addTo(map);           
+            var polyline_ = L.polyline(post.track, { color: "violet"}).addTo(map);
+            L.polyline(post.track.slice(0,3), {color :"yellow"}).addTo(map);
+           L.polyline(post.track.slice(-3),{color:"green"}).addTo(map);
+            L.circleMarker(post.track[0],{radius:10,color:"yellow"}).addTo(map);           
  map.fitBounds(polyline_.getBounds());
        }); 
 }

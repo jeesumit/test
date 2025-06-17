@@ -1,5 +1,6 @@
 #ifndef MM_H
 #define MM_H
+int pidCTE(double val,double setp,double kp,double ki,double kd);
 double update_filter(double measurement, double predict, double gain);
 float ratof(char *arr);
 double initial_bearing(double lat_a,double lat_b,double lon_a,double lon_b);
