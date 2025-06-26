@@ -75,14 +75,15 @@ ssize_t bytes_written;
 int fd, res;
 FILE * nf;
 unsigned int *bn;
-/*--------------------LOG FILE INIT___________________________________________*/
+/*--------------------LOG FILE INIT___________________________________________
 const char logfile[] = "inc/log.buf";
 char logdata[256];
 int lgfds = open(logfile,O_WRONLY | O_CREAT | O_TRUNC, 0666);
 if(lgfds == -1){
 perror("openERROR -- LOG");
-}
+}*/
 double estset=0.0;
+char logdata[256];
 /*------------------- Intialize GNSS FILE-------------------------------------*/
 const char *filename = "inc/gnr.buf";
 ssize_t bytes_read;
@@ -176,11 +177,6 @@ while (!feof(nf) && line_count < count) {
 	   
 	   pred_lat= (sum_lat/n);
 	   pred_lng= (sum_lng/n);
-	   
-	   
-	   
-	   //sprintf(data,"speed:%.2f Lat:%f Lng:%f head:%.2f Latpt:%f lngpt:%f LatK:%f LngK:%f pt:%d\n",spd,lat,lng,head,lat_p,lon_p,out_lat,out_lng,line_count);
-	   //printf("%s ",data);
 	  
 	   double diff = distance(lat,lat_p,lng,lon_p);
 	   dis_ab = distance(lat_pa,lat_pb,lon_pa,lon_pb);
@@ -192,21 +188,21 @@ while (!feof(nf) && line_count < count) {
 	   dis_ac=distance(lat_pa,out_lat, lon_pa, out_lng);
 	   dis_bc=distance(lat_pb,out_lat, lon_pb, out_lng);
 	   ang_ac= initial_bearing(lat_pa,out_lat, lon_pa, out_lng);
-	   diffang_h=head-ang_ab;
+	   diffang_h=head - ang_ab;
 	   cte_ab = cross_track_error(dis_ac,ang_ab, ang_ac);
            
            if(cte_ab !=0.0){
-           prev_cte = -1.0*0.3554*cte_ab;
+           prev_cte = -1.0*0.5554*cte_ab;
            //prev_cte = (0.1*(cte_ab*cte_ab)-6.4);
            prdstpt =ConvertRadtoDeg(asin(prev_cte / dis_ac));
            }
-           //estset = 3*prdstpt;
-             estset = 2*prdstpt;
+           estset = 3*prdstpt;
+           //estset = 2*prdstpt;
 
            ///sprintf(logdata,"CTE:%.2f, estCTE:%.2f, disAC:%.2f deltaAng:%.2f \n",cte_ab,prev_cte,dis_ac,diffang_h);
-           cancte = pidCTE(cte_ab,prev_cte,200.0,0.01,10.0);
-           canbus = pidHead(diffang_h,estset,150.0,0.000001,40.0);
-           mainc =(int)((canbus + cancte) / 2);
+           cancte = pidCTE(cte_ab,prev_cte,100,0.001,0.0);
+           canbus = pidHead(diffang_h,estset,110.0,0.00001,0.1);
+           mainc =(int)((0.9*canbus +0.1*cancte));
 	   //printf("CTE:%.2f predst: %.2f setpt:%.2f %d\n",cte_ab,3*prdstpt,(-5*cte_ab),line_count); 
 	   sprintf(message,"%d\r\n",mainc);
 	   bytes_written = write(fds,message, sizeof(message));
@@ -216,11 +212,11 @@ while (!feof(nf) && line_count < count) {
     		}
            sprintf(logdata,"CTE:%.2f, estCTE:%.2f,estcan:%d canBuscte:%d num:%d canbus:%d\n",cte_ab,prev_cte,mainc,cancte,line_count,canbus);
            printf("%s ",logdata); 
-           ssize_t logbyte = write(lgfds,logdata,strlen(logdata));
+          /* ssize_t logbyte = write(lgfds,logdata,strlen(logdata));
              if(logbyte == -1){
                  perror("ERROR -- log");
                   close(lgfds);
-               }
+               }*/
 	   if(diff <3.4 && diff > 0.0){
 		fgets(line, 255, nf);
 		line_count++;
@@ -249,11 +245,12 @@ while (!feof(nf) && line_count < count) {
     }
 	
 }
+/*
 if(close(lgfds) == -1){
 perror("Error closing logfile");
 exit(EXIT_FAILURE);
 }
-
+*/
 fclose(nf);
 close(fds);
 return 0;

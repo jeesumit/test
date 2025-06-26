@@ -61,12 +61,12 @@
         
         // Initialize the map
         const map = L.map("map").setView([28.436, 77.304], 21);
-        L.tileLayer(`https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.png?access_token=${ACCESS_TOKEN}`, {
+        /*L.tileLayer(`https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.png?access_token=${ACCESS_TOKEN}`, {
             maxZoom: 24,
             tileSize: 512,
             zoomOffset: -1,
-        }).addTo(map);
-
+        }).addTo(map);*/
+        L.esri.tiledMapLayer({url:"https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/Mapserver"}).addTo(map);
         let eventSource = null;
         let latestMarker = null;
         let livePath = L.polyline([], { color: 'blue',weight:5 }).addTo(map);
